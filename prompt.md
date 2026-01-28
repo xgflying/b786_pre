@@ -1,0 +1,2 @@
+# Prompt
+I want to add a system for power-ups that can randomly appear in the playing field. Start with at least 2 power-ups: one that temporarily slows the snake down and one that makes the snake immune to wall collisions for 10 seconds. The power-up system should be designed so that adding power-ups in the future is easy.

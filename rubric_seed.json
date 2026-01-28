@@ -1,0 +1,86 @@
+[
+  {
+    "rubric_id": "R01",
+    "rubric_content": "代码库必须新增明确的道具类型定义，且至少包含“减速”和“撞墙免疫”两种道具",
+    "type": "Instruction Following",
+    "necessity": "Explicit",
+    "rationale": "题目明确要求“Start with at least 2 power-ups: one that temporarily slows the snake down and one that makes the snake immune to wall collisions for 10 seconds”。可通过静态检查是否存在类似枚举/常量（如 PowerUpType）并包含对应两项来验证。"
+  },
+  {
+    "rubric_id": "R02",
+    "rubric_content": "道具必须能在游戏场地内随机出现（包含随机位置与随机生成时机/间隔）",
+    "type": "Instruction Following",
+    "necessity": "Explicit",
+    "rationale": "题目明确要求“a system for power-ups that can randomly appear in the playing field”。可通过静态检查是否使用随机数生成坐标与生成时机（如 random.randint/random.choice/random.random）来验证。"
+  },
+  {
+    "rubric_id": "R03",
+    "rubric_content": "道具生成的位置必须在网格范围内，且不能与蛇身或食物位置重叠",
+    "type": "Correctness",
+    "necessity": "Implicit",
+    "rationale": "若道具与蛇/食物重叠会造成不可见、立即拾取或逻辑冲突。可静态检查生成函数是否排除了 snake、food 与现有 power_ups 的 position。"
+  },
+  {
+    "rubric_id": "R04",
+    "rubric_content": "蛇拾取“减速”道具后，移动速度必须在一段时间内下降，并在效果结束后恢复到正常速度",
+    "type": "Correctness",
+    "necessity": "Explicit",
+    "rationale": "题目明确要求“one that temporarily slows the snake down”。可静态检查是否存在道具激活与到期逻辑：触发后调整 tick/fps，且到期后恢复 base 值。"
+  },
+  {
+    "rubric_id": "R05",
+    "rubric_content": "蛇拾取“撞墙免疫”道具后，10 秒内撞墙不得触发 game over",
+    "type": "Correctness",
+    "necessity": "Explicit",
+    "rationale": "题目明确要求“makes the snake immune to wall collisions for 10 seconds”。可静态检查墙体碰撞分支是否被 wall_immunity 等状态控制，并且持续时间配置为 10000ms（或等价 10s）。"
+  },
+  {
+    "rubric_id": "R06",
+    "rubric_content": "撞墙免疫持续时间必须是 10 秒（允许以毫秒等等价单位实现）",
+    "type": "Instruction Following",
+    "necessity": "Explicit",
+    "rationale": "题目对 wall immunity 的持续时间有明确数值约束。可静态检查持续时间常量/映射是否为 10s（如 10000ms）。"
+  },
+  {
+    "rubric_id": "R07",
+    "rubric_content": "道具效果必须有可过期的时间管理机制，且能在每帧更新中正确清理过期效果",
+    "type": "Correctness",
+    "necessity": "Implicit",
+    "rationale": "临时效果需要到期恢复，否则会永久生效。可静态检查是否存在 active 状态存储（如 active_power_ups -> end_at）与定期过期判断逻辑。"
+  },
+  {
+    "rubric_id": "R08",
+    "rubric_content": "道具系统的设计必须便于未来新增道具（例如集中管理道具类型与持续时间/效果映射，避免散落在多处的硬编码）",
+    "type": "Readability & Maintainability",
+    "necessity": "Explicit",
+    "rationale": "题目明确要求“so that adding power-ups in the future is easy”。可静态检查是否采用可扩展结构（如枚举+映射+统一的 apply/activate 流程），而不是仅在随机位置塞入大量 if/else。"
+  },
+  {
+    "rubric_id": "R09",
+    "rubric_content": "道具渲染必须与游戏主渲染流程集成，且能在画面中可见区分不同道具类型",
+    "type": "Instruction Following",
+    "necessity": "Explicit",
+    "rationale": "题目明确要求“appear in the playing field”，即视觉上可见。可静态检查 draw() 中是否绘制 power_ups 且不同类型使用不同颜色/图形。"
+  },
+  {
+    "rubric_id": "R10",
+    "rubric_content": "道具拾取判定必须基于蛇头位置与道具位置重合，并且拾取后应从场上移除该道具",
+    "type": "Correctness",
+    "necessity": "Implicit",
+    "rationale": "否则可能反复触发或无法触发。可静态检查 update() 是否用 new_head 与 power_up.position 比较，并在拾取后从列表中删除。"
+  },
+  {
+    "rubric_id": "R11",
+    "rubric_content": "实现不得引入明显的语法错误或无法导入的名称（例如新增类型/函数未定义）",
+    "type": "Correctness",
+    "necessity": "Implicit",
+    "rationale": "基础可运行性是隐性要求。可通过静态检查导入、类型引用（PowerUpType、PowerUp）是否都存在且可被解释器解析。"
+  },
+  {
+    "rubric_id": "R12",
+    "rubric_content": "新增逻辑不得破坏原有核心玩法（移动、吃食物加分、暂停/重开等）",
+    "type": "Correctness",
+    "necessity": "Implicit",
+    "rationale": "对现有项目进行功能扩展应避免回归。可静态检查主循环、事件处理、吃食物加分与 snake pop/insert 逻辑仍然存在且语义未被替换为无关流程。"
+  }
+]

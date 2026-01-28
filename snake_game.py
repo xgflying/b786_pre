@@ -2,12 +2,19 @@
 import pygame
 import random
 import sys
-from typing import List, Tuple
+import math
+from dataclasses import dataclass
+from typing import Dict, List, Tuple
 
 from game_constants import *
 
 # Initialize pygame
 pygame.init()
+
+@dataclass(frozen=True)
+class PowerUp:
+    type: PowerUpType
+    position: Tuple[int, int]
 
 class SnakeGame:
     def __init__(self):
@@ -16,6 +23,12 @@ class SnakeGame:
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
         self.big_font = pygame.font.Font(None, 72)
+        self.base_fps = 10
+        self.power_up_durations_ms: Dict[PowerUpType, int] = {
+            PowerUpType.SLOW_DOWN: 5000,
+            PowerUpType.WALL_IMMUNITY: 10000,
+        }
+        self.power_ups: List[PowerUp] = []
         
         self.reset_game()
     
@@ -23,18 +36,40 @@ class SnakeGame:
         self.snake = [(GRID_WIDTH // 2, GRID_HEIGHT // 2)]
         self.direction = Direction.RIGHT
         self.next_direction = Direction.RIGHT  # Add direction queue
-        self.food = self.generate_food()
+        self.power_ups = []
+        self.active_power_ups: Dict[PowerUpType, int] = {}
         self.score = 0
         self.game_over = False
         self.paused = False
         self.apples_eaten = 0
+        self.wall_immunity = False
+        self.current_fps = self.base_fps
+        self.food = self.generate_food()
+        now = pygame.time.get_ticks()
+        self.next_power_up_spawn_at = now + random.randint(6000, 11000)
     
     def generate_food(self) -> Tuple[int, int]:
         while True:
             food = (random.randint(0, GRID_WIDTH - 1), 
                    random.randint(0, GRID_HEIGHT - 1))
-            if food not in self.snake:
+            if food not in self.snake and food not in [p.position for p in self.power_ups]:
                 return food
+    
+    def generate_power_up(self, power_up_type: PowerUpType | None = None):
+        if power_up_type is None:
+            power_up_type = random.choice(list(PowerUpType))
+
+        while True:
+            position = (random.randint(0, GRID_WIDTH - 1), 
+                       random.randint(0, GRID_HEIGHT - 1))
+            if (
+                position not in self.snake
+                and position != self.food
+                and position not in [p.position for p in self.power_ups]
+            ):
+                break
+
+        self.power_ups.append(PowerUp(type=power_up_type, position=position))
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -71,6 +106,10 @@ class SnakeGame:
         if self.game_over or self.paused:
             return
         
+        now = pygame.time.get_ticks()
+        self.update_power_ups(now)
+        self.maybe_spawn_power_up(now)
+        
         # Update direction from queue at the start of each frame
         self.direction = self.next_direction
         
@@ -80,10 +119,13 @@ class SnakeGame:
         new_head = (head[0] + dx, head[1] + dy)
         
         # Check collision with walls
-        if (new_head[0] < 0 or new_head[0] >= GRID_WIDTH or
-            new_head[1] < 0 or new_head[1] >= GRID_HEIGHT):
-            self.game_over = True
-            return
+        if not self.wall_immunity:
+            if (new_head[0] < 0 or new_head[0] >= GRID_WIDTH or
+                new_head[1] < 0 or new_head[1] >= GRID_HEIGHT):
+                self.game_over = True
+                return
+        else:
+            new_head = (new_head[0] % GRID_WIDTH, new_head[1] % GRID_HEIGHT)
         
         # Check collision with self
         if new_head in self.snake:
@@ -93,14 +135,52 @@ class SnakeGame:
         # Add new head
         self.snake.insert(0, new_head)
         
-        # Check if food is eaten
-        if new_head == self.food:
+        ate_food = new_head == self.food
+        if ate_food:
             self.score += 10
             self.apples_eaten += 1
             self.food = self.generate_food()
         else:
-            # Remove tail if no food eaten
             self.snake.pop()
+
+        collected = None
+        for power_up in self.power_ups:
+            if new_head == power_up.position:
+                collected = power_up
+                break
+
+        if collected is not None:
+            self.activate_power_up(collected.type, now)
+            self.power_ups = [p for p in self.power_ups if p != collected]
+    
+    def maybe_spawn_power_up(self, now: int):
+        if now < self.next_power_up_spawn_at:
+            return
+
+        if len(self.power_ups) < 2:
+            self.generate_power_up()
+
+        self.next_power_up_spawn_at = now + random.randint(7000, 12000)
+
+    def activate_power_up(self, power_up_type: PowerUpType, now: int):
+        duration_ms = self.power_up_durations_ms.get(power_up_type, 0)
+        if duration_ms <= 0:
+            return
+        self.active_power_ups[power_up_type] = now + duration_ms
+        self.apply_active_power_ups()
+
+    def update_power_ups(self, now: int):
+        expired = [k for k, end_at in self.active_power_ups.items() if now >= end_at]
+        for k in expired:
+            del self.active_power_ups[k]
+        self.apply_active_power_ups()
+
+    def apply_active_power_ups(self):
+        self.wall_immunity = PowerUpType.WALL_IMMUNITY in self.active_power_ups
+        if PowerUpType.SLOW_DOWN in self.active_power_ups:
+            self.current_fps = max(3, self.base_fps - 3)
+        else:
+            self.current_fps = self.base_fps
     
     def get_background_color(self):
         """Return background color based on apples eaten"""
@@ -167,6 +247,28 @@ class SnakeGame:
     def draw(self):
         # Fill background with dynamic color
         self.screen.fill(self.get_background_color())
+        
+        for power_up in self.power_ups:
+            x, y = power_up.position
+            center_x = x * GRID_SIZE + GRID_SIZE // 2
+            center_y = y * GRID_SIZE + GRID_SIZE // 2
+            radius = GRID_SIZE // 2 - 2
+            
+            if power_up.type == PowerUpType.SLOW_DOWN:
+                pygame.draw.circle(self.screen, BLUE, (center_x, center_y), radius)
+                pygame.draw.circle(self.screen, DARK_BLUE, (center_x, center_y), radius, 2)
+                for i in range(3):
+                    pygame.draw.arc(self.screen, DARK_BLUE, 
+                                  (center_x - radius + 4, center_y - radius + 4, radius * 2 - 8, radius * 2 - 8), 
+                                  0, 3.14 * 2 * (i+1)/3, 2)
+            elif power_up.type == PowerUpType.WALL_IMMUNITY:
+                pygame.draw.circle(self.screen, YELLOW, (center_x, center_y), radius)
+                pygame.draw.circle(self.screen, (200, 200, 0), (center_x, center_y), radius, 2)
+                for angle in range(0, 360, 45):
+                    rad = math.radians(angle)
+                    end_x = center_x + math.cos(rad) * (radius - 4)
+                    end_y = center_y + math.sin(rad) * (radius - 4)
+                    pygame.draw.line(self.screen, (200, 200, 0), (center_x, center_y), (end_x, end_y), 2)
         
         # Draw snake segments
         for i, segment in enumerate(self.snake):
@@ -271,7 +373,7 @@ class SnakeGame:
             running = self.handle_events()
             self.update()
             self.draw()
-            self.clock.tick(10)  # 10 FPS for smooth gameplay
+            self.clock.tick(self.current_fps)
         
         pygame.quit()
         sys.exit()

@@ -51,3 +51,15 @@ A classic Snake game implemented in Python using Pygame.
 - `snake_game.py` - Main game file
 - `requirements.txt` - Python dependencies
 - `README.md` - This file 
+
+# 本地运行
+## 创建虚拟环境并安装依赖
+``` 
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+```
+## 启动项目
+```
+    python snake_game.py
+```

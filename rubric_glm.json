@@ -1,0 +1,74 @@
+[
+  {
+    "rubric_id": "R01",
+    "rubric_content": "代码库必须新增明确的道具类型定义，且至少包含“减速”和“撞墙免疫”两种道具",
+    "score": "1",
+    "rationale": "在 game_constants.py 中新增了 PowerUpType 枚举类，明确定义了 SLOW_DOWN 和 WALL_IMMUNITY 两种道具类型，符合题目要求。"
+  },
+  {
+    "rubric_id": "R02",
+    "rubric_content": "道具必须能在游戏场地内随机出现（包含随机位置与随机生成时机/间隔）",
+    "score": "1",
+    "rationale": "snake_game.py 中的 maybe_spawn_power_up 函数通过随机时间间隔触发生成，generate_power_up 函数利用 random.randint 随机分配网格坐标，实现了随机出现机制。"
+  },
+  {
+    "rubric_id": "R03",
+    "rubric_content": "道具生成的位置必须在网格范围内，且不能与蛇身或食物位置重叠",
+    "score": "1",
+    "rationale": "generate_power_up 函数在生成位置时通过循环检查，确保坐标不属于 self.snake 且不等于 self.food，避免了重叠逻辑错误。"
+  },
+  {
+    "rubric_id": "R04",
+    "rubric_content": "蛇拾取“减速”道具后，移动速度必须在一段时间内下降，并在效果结束后恢复到正常速度",
+    "score": "1",
+    "rationale": "拾取道具后会调用 activate_power_up 激活效果，在 apply_active_power_ups 中根据 SLOW_DOWN 状态降低 current_fps，且 update_power_ups 负责在时长结束后恢复原速度。"
+  },
+  {
+    "rubric_id": "R05",
+    "rubric_content": "蛇拾取“撞墙免疫”道具后，10 秒内撞墙不得触发 game over",
+    "score": "1",
+    "rationale": "snake_game.py 的 update 逻辑在碰撞检测前判断 wall_immunity 状态，若激活则允许穿墙环绕而非触发 game_over，满足功能需求。"
+  },
+  {
+    "rubric_id": "R06",
+    "rubric_content": "撞墙免疫持续时间必须是 10 秒（允许以毫秒等等价单位实现）",
+    "score": "1",
+    "rationale": "在 SnakeGame.__init__ 中，power_up_durations_ms 映射表明确将 PowerUpType.WALL_IMMUNITY 设置为 10000 毫秒（即 10 秒）。"
+  },
+  {
+    "rubric_id": "R07",
+    "rubric_content": "道具效果必须有可过期的时间管理机制，且能在每帧更新中正确清理过期效果",
+    "score": "1",
+    "rationale": "系统通过 active_power_ups 字典存储到期时间戳，并在每帧 update 调用的 update_power_ups 中移除过期项，机制完整且逻辑正确。"
+  },
+  {
+    "rubric_id": "R08",
+    "rubric_content": "道具系统的设计必须便于未来新增道具（例如集中管理道具类型与持续时间/效果映射，避免散落在多处的硬编码）",
+    "score": "1",
+    "rationale": "代码采用了枚举类型定义道具，并使用字典集中管理持续时间。逻辑上解耦了激活、应用和过期过程，非常便于扩展新道具。"
+  },
+  {
+    "rubric_id": "R09",
+    "rubric_content": "道具渲染必须与游戏主渲染流程集成，且能在画面中可见区分不同道具类型",
+    "score": "1",
+    "rationale": "SnakeGame.draw 函数中增加了对 power_ups 列表的遍历绘制，针对不同类型绘制了蓝色（减速）和黄色（盾牌）的不同图标，视觉区分度高。"
+  },
+  {
+    "rubric_id": "R10",
+    "rubric_content": "道具拾取判定必须基于蛇头位置与道具位置重合，并且拾取后应从场上移除该道具",
+    "score": "1",
+    "rationale": "在 update 函数中，通过遍历道具列表并判断 new_head == power_up.position 来触发收集，并随即将其从列表中移除，符合交互逻辑。"
+  },
+  {
+    "rubric_id": "R11",
+    "rubric_content": "实现不得引入明显的语法错误或无法导入的名称（例如新增类型/函数未定义）",
+    "score": "1",
+    "rationale": "代码经过编译测试，dataclass、Enum 以及 math 库的导入均正确，不存在未定义引用或语法错误。"
+  },
+  {
+    "rubric_id": "R12",
+    "rubric_content": "新增逻辑不得破坏原有核心玩法（移动、吃食物加分、暂停/重开等）",
+    "score": "1",
+    "rationale": "新功能以非侵入方式集成到 update 和 draw 流程中，原有的食物生成、分数累加、蛇身增长以及暂停逻辑均保持正常运行。"
+  }
+]
