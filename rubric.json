@@ -71,27 +71,34 @@
   },
   {
     "rubric_id": "R11",
+    "rubric_content": "新增的道具系统的配置应该遵循当前的设计模式，把道具类型、持续时间都放在 game_constants.py 中统一维护",
+    "type": "Readability & Maintainability",
+    "necessity": "Explicit",
+    "rationale": "题目明确要求“in the future is easy”。应该把道具配置独立出来，方便后期容易维护，可静态检查是否在 game_constants.py 中定义了道具类型、道具有效期等参数。"
+  },
+  {
+    "rubric_id": "R12",
     "rubric_content": "道具渲染必须与游戏主渲染流程集成，且能在画面中可见区分不同道具类型",
     "type": "Instruction Following",
     "necessity": "Explicit",
     "rationale": "题目明确要求“appear in the playing field”，即视觉上可见。可静态检查 draw() 中是否绘制 power_ups 且不同类型使用不同颜色/图形。"
   },
   {
-    "rubric_id": "R12",
+    "rubric_id": "R13",
     "rubric_content": "道具拾取判定必须基于蛇头位置与道具位置重合，并且拾取后应从场上移除该道具",
     "type": "Correctness",
     "necessity": "Implicit",
     "rationale": "否则可能反复触发或无法触发。可静态检查 update() 是否用 new_head 与 power_up.position 比较，并在拾取后从列表中删除。"
   },
   {
-    "rubric_id": "R13",
+    "rubric_id": "R14",
     "rubric_content": "实现不得引入明显的语法错误或无法导入的名称（例如新增类型/函数未定义）",
     "type": "Correctness",
     "necessity": "Implicit",
     "rationale": "基础可运行性是隐性要求。可通过静态检查导入、类型引用（PowerUpType、PowerUp）是否都存在且可被解释器解析。"
   },
   {
-    "rubric_id": "R14",
+    "rubric_id": "R15",
     "rubric_content": "新增逻辑不得破坏原有核心玩法（移动、吃食物加分、暂停/重开等）",
     "type": "Correctness",
     "necessity": "Implicit",
